@@ -3,13 +3,29 @@ project(Raft)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-#set(glog_ROOT )
-#find_package (glog REQUIRED)
 find_library(GLOG_LIB glog build/lib/glog)
+find_library(PROTO_LIB proto build/lib/protofiles)
 
-set(SOURCE_FILES main.cpp)
-add_executable(Raft ${SOURCE_FILES})
-target_link_libraries (Raft glog)
+set_source_files_properties(${PROTO_SRC} ${PROTO_HEADER} PROPERTIES
+        GENERATED TRUE)
+
+#include_directories(${CMAKE_BINARY_DIR}/protofiles)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+#include_directories(${CMAKE_BINARY_DIR}/protofiles)
+#include_directories(${CMAKE_BINARY_DIR}/lib/googlemock)
+#include_directories(${CMAKE_BINARY_DIR}/lib/glog)
+
+
+################################
+# SRC
+################################
+add_subdirectory(src)
+
+################################
+# Proto
+################################
+add_subdirectory(protofiles)
 
 ################################
 # GTest
@@ -25,6 +41,9 @@ include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
 #add_test( runUnitTests runUnitTests )
 
 ################################
-# GTest
+# Glog
 ################################
 ADD_SUBDIRECTORY (lib/glog)
+
+
+
