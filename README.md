@@ -2,7 +2,7 @@
 
 Trying to build a Raft distributed consensus protocal in cpp.
 
-# how to use
+# how to use (Mac os)
 ```bash
 # Make sure install dependencies first. See dependencies file in root dir.
 mkdir build
