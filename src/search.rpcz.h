@@ -18,7 +18,7 @@ class rpc;
 class closure;
 class rpc_channel;
 }  //namesacpe rpcz
-#include "protofiles/search.pb.h"
+#include "search.pb.h"
 void rpcz_protobuf_AssignDesc_search_2eproto();
 void rpcz_protobuf_ShutdownFile_search_2eproto();
 

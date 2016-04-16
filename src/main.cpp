@@ -2,8 +2,8 @@
 #include <glog/logging.h>
 #include <rpcz/rpcz.hpp>
 
-#include "protofiles/address.pb.h"
-#include "protofiles/search.pb.h"
+#include "address.pb.h"
+#include "search.pb.h"
 
 #include "src/search.rpcz.h"
 
