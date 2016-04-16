@@ -28,5 +28,3 @@ include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
 # GTest
 ################################
 ADD_SUBDIRECTORY (lib/glog)
-
-#include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
