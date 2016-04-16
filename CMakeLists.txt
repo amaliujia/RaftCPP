@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.5)
 project(Raft)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -lboost_system -lrpcz")
+
+find_package(BOOST COMPONENTS program_options REQUIRED)
 
 find_library(GLOG_LIB glog build/lib/glog)
 find_library(PROTO_LIB proto build/lib/protofiles)
@@ -9,13 +11,9 @@ find_library(PROTO_LIB proto build/lib/protofiles)
 set_source_files_properties(${PROTO_SRC} ${PROTO_HEADER} PROPERTIES
         GENERATED TRUE)
 
-#include_directories(${CMAKE_BINARY_DIR}/protofiles)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-
-#include_directories(${CMAKE_BINARY_DIR}/protofiles)
-#include_directories(${CMAKE_BINARY_DIR}/lib/googlemock)
-#include_directories(${CMAKE_BINARY_DIR}/lib/glog)
-
+include_directories(${Boost_INCLUDE_DIR})
+link_directories(${Boost_LIBRARY_DIR})
 
 ################################
 # SRC
@@ -31,7 +29,7 @@ add_subdirectory(protofiles)
 # GTest
 ################################
 ADD_SUBDIRECTORY (lib/googlemock)
-enable_testing()
+#enable_testing()
 include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
 
 ## Add test cpp file
