@@ -35,6 +35,8 @@ class RaftService : public rpcz::service {
 
   static const ::google::protobuf::ServiceDescriptor* descriptor();
 
+  virtual void GetStatus(const ::Empty& request,
+                       ::rpcz::reply< ::PeerStatus> response);
   virtual void Vote(const ::VoteRequest& request,
                        ::rpcz::reply< ::VoteReply> response);
 
@@ -65,6 +67,12 @@ class RaftService_Stub {
   inline ::rpcz::rpc_channel* channel() { return channel_; }
 
 
+  void GetStatus(const ::Empty& request,
+                       ::PeerStatus* response,
+                       ::rpcz::rpc* rpc,                     ::rpcz::closure* done);
+  void GetStatus(const ::Empty& request,
+                       ::PeerStatus* response,
+                       long deadline_ms = -1);
   void Vote(const ::VoteRequest& request,
                        ::VoteReply* response,
                        ::rpcz::rpc* rpc,                     ::rpcz::closure* done);

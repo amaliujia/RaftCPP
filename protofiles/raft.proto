@@ -10,6 +10,20 @@ message VoteReply{
     required bool vote = 2;
 }
 
+message PeerStatus{
+    required int64 term = 1;
+     enum Status {
+        UNKNOWN = 0;
+        FOLLOWER = 1;
+        CANDIDATE = 2;
+        LEADER = 3;
+      }
+    required Status status = 2 [default = FOLLOWER];
+}
+
+message Empty {}
+
 service RaftService {
+  rpc GetStatus(Empty)   returns(PeerStatus);
   rpc Vote(VoteRequest) returns(VoteReply);
 }

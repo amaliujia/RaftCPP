@@ -44,9 +44,13 @@ void rpcz_protobuf_AddDesc_raft_2eproto() {
     "\n\nraft.proto\"b\n\013VoteRequest\022\014\n\004term\030\001 \002("
     "\003\022\024\n\014candidate_id\030\002 \002(\003\022\026\n\016last_log_inde"
     "x\030\003 \002(\003\022\027\n\017last_term_index\030\004 \002(\003\"\'\n\tVote"
-    "Reply\022\014\n\004term\030\001 \002(\003\022\014\n\004vote\030\002 \002(\0102/\n\013Raf"
-    "tService\022 \n\004Vote\022\014.VoteRequest\032\n.VoteRep"
-    "ly", 202);
+    "Reply\022\014\n\004term\030\001 \002(\003\022\014\n\004vote\030\002 \002(\010\"{\n\nPee"
+    "rStatus\022\014\n\004term\030\001 \002(\003\022,\n\006status\030\002 \002(\0162\022."
+    "PeerStatus.Status:\010FOLLOWER\"1\n\006Status\022\014\n"
+    "\010FOLLOWER\020\000\022\r\n\tCANDIDATE\020\001\022\n\n\006LEADER\020\002\"\007"
+    "\n\005Empty2Q\n\013RaftService\022 \n\tGetStatus\022\006.Em"
+    "pty\032\013.PeerStatus\022 \n\004Vote\022\014.VoteRequest\032\n"
+    ".VoteReply", 370);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "raft.proto", &protobuf_RegisterTypes);
   ::google::protobuf::internal::OnShutdown(&rpcz_protobuf_ShutdownFile_raft_2eproto);
@@ -66,6 +70,12 @@ const ::google::protobuf::ServiceDescriptor* RaftService::GetDescriptor() {
   return RaftService_descriptor_;
 }
 
+void RaftService::GetStatus(const ::Empty&,
+                         ::rpcz::reply< ::PeerStatus> reply) {
+  reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
+              "Method GetStatus() not implemented.");
+}
+
 void RaftService::Vote(const ::VoteRequest&,
                          ::rpcz::reply< ::VoteReply> reply) {
   reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
@@ -78,6 +88,11 @@ void RaftService::call_method(const ::google::protobuf::MethodDescriptor* method
   GOOGLE_DCHECK_EQ(method->service(), RaftService_descriptor_);
   switch(method->index()) {
     case 0:
+      GetStatus(
+          *::google::protobuf::down_cast<const ::Empty*>(&request),
+          ::rpcz::reply< ::PeerStatus>(channel));
+      break;
+    case 1:
       Vote(
           *::google::protobuf::down_cast<const ::VoteRequest*>(&request),
           ::rpcz::reply< ::VoteReply>(channel));
@@ -93,6 +108,8 @@ const ::google::protobuf::Message& RaftService::GetRequestPrototype(
   GOOGLE_DCHECK_EQ(method->service(), descriptor());
   switch(method->index()) {
     case 0:
+      return ::Empty::default_instance();
+    case 1:
       return ::VoteRequest::default_instance();
     default:
       GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -105,6 +122,8 @@ const ::google::protobuf::Message& RaftService::GetResponsePrototype(
   GOOGLE_DCHECK_EQ(method->service(), descriptor());
   switch(method->index()) {
     case 0:
+      return ::PeerStatus::default_instance();
+    case 1:
       return ::VoteReply::default_instance();
     default:
       GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
@@ -125,12 +144,33 @@ RaftService_Stub::~RaftService_Stub() {
   if (owns_channel_) delete channel_;
 }
 
+void RaftService_Stub::GetStatus(const ::Empty& request,
+                              ::PeerStatus* response,
+                              ::rpcz::rpc* rpc,
+                              ::rpcz::closure* done) {
+  channel_->call_method(service_name_,
+                        RaftService::descriptor()->method(0),
+                        request, response, rpc, done);
+}
+void RaftService_Stub::GetStatus(const ::Empty& request,
+                              ::PeerStatus* response,
+                              long deadline_ms) {
+  ::rpcz::rpc rpc;
+  rpc.set_deadline_ms(deadline_ms);
+  channel_->call_method(service_name_,
+                        RaftService::descriptor()->method(0),
+                        request, response, &rpc, NULL);
+  rpc.wait();
+  if (!rpc.ok()) {
+    throw ::rpcz::rpc_error(rpc);
+  }
+}
 void RaftService_Stub::Vote(const ::VoteRequest& request,
                               ::VoteReply* response,
                               ::rpcz::rpc* rpc,
                               ::rpcz::closure* done) {
   channel_->call_method(service_name_,
-                        RaftService::descriptor()->method(0),
+                        RaftService::descriptor()->method(1),
                         request, response, rpc, done);
 }
 void RaftService_Stub::Vote(const ::VoteRequest& request,
@@ -139,7 +179,7 @@ void RaftService_Stub::Vote(const ::VoteRequest& request,
   ::rpcz::rpc rpc;
   rpc.set_deadline_ms(deadline_ms);
   channel_->call_method(service_name_,
-                        RaftService::descriptor()->method(0),
+                        RaftService::descriptor()->method(1),
                         request, response, &rpc, NULL);
   rpc.wait();
   if (!rpc.ok()) {
