@@ -25,5 +25,6 @@ message Empty {}
 
 service RaftService {
   rpc GetStatus(Empty)   returns(PeerStatus);
+  rpc AppendMsg(Empty)  returns(Empty);
   rpc Vote(VoteRequest) returns(VoteReply);
 }

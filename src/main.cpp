@@ -9,7 +9,7 @@ using namespace std;
 
 
 string BuildRPCAddr(string addr, int port) {
- return "tcp://" + addr + to_string(port);
+ return "tcp://" + addr + ":" + to_string(port);
 }
 
 int main(int argc, char* argv[]) {
@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
   ports.push_back(port);
  }
 
-  vector<string> service;
+ vector<string> service;
  for (size_t i = 0; i < addrs.size(); i++) {
   service.push_back(BuildRPCAddr(addrs[i], ports[i]));
  }
@@ -59,7 +59,10 @@ int main(int argc, char* argv[]) {
 //  cout << "Error: " << e.what() << endl;;
 // }
 
+ while (true) {
+  std::this_thread::sleep_for (std::chrono::seconds(300));
+ }
 
- std::this_thread::sleep_for (std::chrono::seconds(30));
+ std::this_thread::sleep_for (std::chrono::seconds(300));
  return 0;
 }

@@ -30,79 +30,170 @@ class Raft : public RaftService {
 public:
   Raft(std::string addr, int port, int peer_id,
        const std::vector<std::string>& peers_addrs)
-      :peers(peers_addrs), id(peer_id), term(-1), status(FOLLOWER){
-    this->rpc_addr = addr;
-    this->rpc_port = port;
+      :peers_(peers_addrs), id_(peer_id), term_(-1), status_(FOLLOWER), vote_for_(-1){
+    this->rpc_addr_ = addr;
+    this->rpc_port_ = port;
 
-    // start rpc service here. Do not need to join
-    rpc_thread = std::thread(&Raft::ThreadMain, this);
+    this->leader_active_time_ = std::chrono::duration_cast< std::chrono::milliseconds >(
+    std::chrono::system_clock::now().time_since_epoch()).count();
+
+    std::random_device rd;
+    mt_ = std::mt19937(rd());
+    int_dist_ = std::uniform_real_distribution<int>(200, 350);
+
+    // start rpc service and raft service here. Do not need to join.
+    raft_thread_ = std::thread(&Raft::LaunchRaftDemon, this);
+    rpc_thread_ = std::thread(&Raft::ThreadMain, this);
   }
 
-  std::string GetInfo() {
-    return this->rpc_addr + std::to_string(this->rpc_port);
-  }
+  std::string GetInfo();
 
   virtual void GetStatus(const Empty& e, rpcz::reply<PeerStatus> reply) {
     PeerStatus status;
-    status.set_term(this->term);
+    status.set_term(this->term_);
     status.set_status(StatusMapping());
     reply.send(status);
   }
 
   virtual void Vote(const VoteRequest& request, rpcz::reply<VoteReply> reply) {
-      VoteReply response;
-      reply.send(response);
+    std::unique_lock<std::mutex> locker(lock_);
+
+    VoteReply response;
+    response.set_term(this->term_);
+    if (this->status_ == LEADER || this->status_ == CANDIDATE) {
+      response.set_vote(false);
+    } else if (this->vote_for_ != -1){
+      response.set_vote(false);
+    } else {
+      response.set_vote(true);
+      this->vote_for_ = request.candidate_id();
+      this->leader_active_time_ = std::chrono::duration_cast< std::chrono::milliseconds >(
+      std::chrono::system_clock::now().time_since_epoch()).count();
+    }
+    locker.unlock();
+    reply.send(response);
+  }
+
+  virtual void AppendMsg(const Empty& request,
+                         rpcz::reply<Empty> reply) {
+    LOG(INFO) << "Heartbeat";
+    std::unique_lock<std::mutex> locker(lock_);
+
+    this->leader_active_time_ = std::chrono::duration_cast< std::chrono::milliseconds >(
+    std::chrono::system_clock::now().time_since_epoch()).count();
+
+    locker.unlock();
+
+    Empty e;
+    reply.send(e);
   }
 
 private:
-  PeerStatus_Status StatusMapping() {
-    switch(this->status) {
-      case FOLLOWER:
-          return PeerStatus_Status_FOLLOWER;
-      case CANDIDATE:
-          return PeerStatus_Status_CANDIDATE;
-      case LEADER:
-          return PeerStatus_Status_LEADER;
-      default:
-          return PeerStatus_Status_UNKNOWN;
-    }
-  }
+  PeerStatus_Status StatusMapping();
 
-  RaftStatus PeerStatusMapping(int i) {
-    switch(i) {
-      case 1:
-        return FOLLOWER;
-      case 2:
-        return CANDIDATE;
-      case 3:
-        return LEADER;
-      default:
-        return UNKNOWN;
-    }
-  }
+  RaftStatus PeerStatusMapping(PeerStatus_Status status);
 
-  void ThreadMain() {
+  void ThreadMain();
+
+  void LaunchRaftDemon() {
+    // rpcz::application application;
+// RaftService_Stub search_stub(application.create_rpc_channel(
+// "tcp://localhost:5556"), true);
+
+// Peer peer;
+// peer.set_id(2);
+// Null null;
+//
+// cout << "Sending request." << endl;
+// try {
+//  search_stub.Hello(peer, &null, 1000);
+//  cout << null.DebugString() << endl;
+// } catch (rpcz::rpc_error &e) {
+//  cout << "Error: " << e.what() << endl;;
+// }
     rpcz::application application;
-    rpcz::server server(application);
-    server.register_service(this);
-    std::cout << "Serving requests on port " << this->rpc_port << std::endl;
-    server.bind("tcp://" + this->rpc_addr + ":" + std::to_string(this->rpc_port));
-    application.run();
+    std::vector<std::unique_ptr<RaftService_Stub>> channels;
+    for (const auto& s : peers_) {
+       channels.push_back(std::unique_ptr<RaftService_Stub>(
+       new RaftService_Stub(application.create_rpc_channel(s), true)));
+    }
+
+    while (true) {
+      if (this->status_ == FOLLOWER) {
+        LOG(INFO) << this->id_ << " becomes a follower";
+        int patience = this->int_dist_(this->mt_);
+        long long int cur_milli = std::chrono::duration_cast< std::chrono::milliseconds >(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+
+        if (abs(leader_active_time_ - cur_milli) < patience) {
+          std::this_thread::sleep_for (std::chrono::milliseconds(50));
+        } else {
+          // this->leader_active_time = cur_milli;
+          std::unique_lock<std::mutex> locker(lock_);
+
+          if (this->vote_for_ != -1) {
+            this->status_ = CANDIDATE;
+          }
+
+          locker.unlock();
+        }
+      } else if (this->status_ == CANDIDATE) {
+          LOG(INFO) << this->id_ << " becomes a candidate";
+          this->term_ += 1;
+          this->vote_for_ = this->id_;
+          // send requests to peers
+
+          int vote_count = 1;
+          VoteRequest request;
+          request.set_candidate_id(this->id_);
+          request.set_last_log_index(-1);
+          request.set_last_term_index(-1);
+          request.set_term(this->term_);
+
+
+          for (int i = 0; i < peers_.size(); i++) {
+            VoteReply reply;
+            if (i != this->id_) {
+               channels[i]->Vote(request, &reply, 1000);
+               if (reply.vote() == true) {
+                 vote_count += 1;
+               }
+            }
+          }
+
+          if (vote_count >= (peers_.size() + 1) / 2) {
+            this->status_ = LEADER;
+            LOG(INFO) << this->id_ << " becomes a leader";
+          } else {
+            this->leader_active_time_ = std::chrono::duration_cast< std::chrono::milliseconds >(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+            this->status_ = FOLLOWER;
+            this->vote_for_ = -1;
+          }
+      } else { // in leader status
+        std::this_thread::sleep_for (std::chrono::milliseconds(50));
+      }
+    }
   }
 
 private:
-  std::string rpc_addr;
-  int rpc_port;
+  std::string rpc_addr_;
+  int rpc_port_;
 
-  std::thread rpc_thread;
+  std::thread rpc_thread_;
+  std::thread raft_thread_;
 
-  int id;
-  std::vector<std::string> peers;
-  int term;
-  RaftStatus status;
+  int id_;
+  int vote_for_;
+  int term_;
+  RaftStatus status_;
+  std::vector<std::string> peers_;
 
-  // std::unordered_map<RaftCommand> command_log;
-  // std::vector<RaftCommand> logs;
+  long long int leader_active_time_;
+  std::uniform_real_distribution<int> int_dist_;
+  std::mt19937 mt_;
+
+  std::mutex lock_;
 };
 
 }

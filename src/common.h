@@ -11,6 +11,7 @@
 #include <vector>
 #include <string>
 #include <chrono>
+#include <random>
 
 #include <rpcz/rpcz.hpp>
 
