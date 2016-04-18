@@ -37,13 +37,9 @@ public:
     this->leader_active_time_ = std::chrono::duration_cast< std::chrono::milliseconds >(
     std::chrono::system_clock::now().time_since_epoch()).count();
 
-    std::random_device rd;
-    mt_ = std::mt19937(rd());
-    int_dist_ = std::uniform_real_distribution<int>(200, 350);
-
     // start rpc service and raft service here. Do not need to join.
-    raft_thread_ = std::thread(&Raft::LaunchRaftDemon, this);
     rpc_thread_ = std::thread(&Raft::ThreadMain, this);
+    raft_thread_ = std::thread(&Raft::LaunchRaftDemon, this);
   }
 
   std::string GetInfo();
@@ -97,20 +93,23 @@ private:
 
   void LaunchRaftDemon() {
     // rpcz::application application;
-// RaftService_Stub search_stub(application.create_rpc_channel(
-// "tcp://localhost:5556"), true);
+  // RaftService_Stub search_stub(application.create_rpc_channel(
+  // "tcp://localhost:5556"), true);
 
-// Peer peer;
-// peer.set_id(2);
-// Null null;
-//
-// cout << "Sending request." << endl;
-// try {
-//  search_stub.Hello(peer, &null, 1000);
-//  cout << null.DebugString() << endl;
-// } catch (rpcz::rpc_error &e) {
-//  cout << "Error: " << e.what() << endl;;
-// }
+  // Peer peer;
+  // peer.set_id(2);
+  // Null null;
+  //
+  // cout << "Sending request." << endl;
+  // try {
+  //  search_stub.Hello(peer, &null, 1000);
+  //  cout << null.DebugString() << endl;
+  // } catch (rpcz::rpc_error &e) {
+  //  cout << "Error: " << e.what() << endl;;
+  // }
+
+    std::this_thread::sleep_for (std::chrono::seconds(1));
+
     rpcz::application application;
     std::vector<std::unique_ptr<RaftService_Stub>> channels;
     for (const auto& s : peers_) {
@@ -118,10 +117,13 @@ private:
        new RaftService_Stub(application.create_rpc_channel(s), true)));
     }
 
+    std::random_device rd;
+    auto int_dist_ = std::uniform_int_distribution<int>(200, 350);
+    std::mt19937 mt = std::mt19937(rd());
+
     while (true) {
       if (this->status_ == FOLLOWER) {
-        LOG(INFO) << this->id_ << " becomes a follower";
-        int patience = this->int_dist_(this->mt_);
+        int patience = int_dist_(mt);
         long long int cur_milli = std::chrono::duration_cast< std::chrono::milliseconds >(
         std::chrono::system_clock::now().time_since_epoch()).count();
 
@@ -131,7 +133,7 @@ private:
           // this->leader_active_time = cur_milli;
           std::unique_lock<std::mutex> locker(lock_);
 
-          if (this->vote_for_ != -1) {
+          if (this->vote_for_ == -1) {
             this->status_ = CANDIDATE;
           }
 
@@ -190,8 +192,6 @@ private:
   std::vector<std::string> peers_;
 
   long long int leader_active_time_;
-  std::uniform_real_distribution<int> int_dist_;
-  std::mt19937 mt_;
 
   std::mutex lock_;
 };
