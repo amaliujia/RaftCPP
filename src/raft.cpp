@@ -5,26 +5,26 @@
 #include "raft.h"
 
 namespace raft {
-PeerStatus_Status Raft::StatusMapping() {
+PeerStatus::Status Raft::StatusMapping() {
   switch(this->status_) {
     case FOLLOWER:
-      return PeerStatus_Status_FOLLOWER;
+      return PeerStatus::FOLLOWER;
     case CANDIDATE:
-      return PeerStatus_Status_CANDIDATE;
+      return PeerStatus::CANDIDATE;
     case LEADER:
-      return PeerStatus_Status_LEADER;
+      return PeerStatus::LEADER;
     default:
-      return PeerStatus_Status_UNKNOWN;
+      return PeerStatus::UNKNOWN;
   }
 }
 
-RaftStatus Raft::PeerStatusMapping(PeerStatus_Status status) {
+RaftStatus Raft::PeerStatusMapping(PeerStatus::Status status) {
   switch(status) {
-    case PeerStatus_Status_FOLLOWER:
+    case PeerStatus::FOLLOWER:
       return FOLLOWER;
-    case PeerStatus_Status_CANDIDATE:
+    case PeerStatus::CANDIDATE:
       return CANDIDATE;
-    case PeerStatus_Status_LEADER:
+    case PeerStatus::LEADER:
       return LEADER;
     default:
       return UNKNOWN;
