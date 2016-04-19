@@ -92,23 +92,7 @@ private:
   void ThreadMain();
 
   void LaunchRaftDemon() {
-    // rpcz::application application;
-  // RaftService_Stub search_stub(application.create_rpc_channel(
-  // "tcp://localhost:5556"), true);
-
-  // Peer peer;
-  // peer.set_id(2);
-  // Null null;
-  //
-  // cout << "Sending request." << endl;
-  // try {
-  //  search_stub.Hello(peer, &null, 1000);
-  //  cout << null.DebugString() << endl;
-  // } catch (rpcz::rpc_error &e) {
-  //  cout << "Error: " << e.what() << endl;;
-  // }
-
-    std::this_thread::sleep_for (std::chrono::seconds(1));
+    std::this_thread::sleep_for (std::chrono::seconds(5));
 
     rpcz::application application;
     std::vector<std::unique_ptr<RaftService_Stub>> channels;
