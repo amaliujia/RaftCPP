@@ -24,7 +24,7 @@ TEST_F(RaftTest, BasicTest) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   int port = 5555;
-  size_t peer_num = 3;
+  size_t peer_num = 5;
 
   std::vector<std::string> service;
   for (size_t i = 0; i < peer_num; i++) {
@@ -73,23 +73,8 @@ TEST_F(RaftTest, BasicTest) {
     }
   }
 
-  LOG(INFO) << "Follower count " << follower_count;
-  LOG(INFO) << "leader count " << leader_count;
-  LOG(INFO) << "candidate_count " << candidate_count;
-
-
-  EXPECT_EQ(follower_count, 2);
+  EXPECT_EQ(follower_count, 4);
   EXPECT_EQ(leader_count, 1);
   EXPECT_EQ(candidate_count, 0);
   EXPECT_EQ(unknown_count, 0);
-
-//  for (int i = 0; i < peer_num; i++) {
-//    try {
-//      channels[i]->c
-//    } catch (rpcz::rpc_error &e) {
-//      LOG(INFO) << "Error: " << e.what() << std::endl;;
-//    }
-//
-//  }
-
 }
