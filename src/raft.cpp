@@ -32,12 +32,12 @@ RaftStatus Raft::PeerStatusMapping(PeerStatus::Status status) {
 }
 
 void Raft::ThreadMain() {
-  rpcz::application application;
-  rpcz::server server(application);
+
+  rpcz::server server(this->application_);
   server.register_service(this);
   LOG(INFO) << "Serving requests on port " << this->rpc_port_;
   server.bind("tcp://" + this->rpc_addr_ + ":" + std::to_string(this->rpc_port_));
-  application.run();
+  this->application_.run();
 }
 
 std::string Raft::GetInfo() {

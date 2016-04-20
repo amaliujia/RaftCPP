@@ -30,7 +30,7 @@ class Raft : public RaftService {
 public:
   Raft(std::string addr, int port, int peer_id,
        const std::vector<std::string>& peers_addrs)
-      :id_(peer_id), term_(-1), status_(FOLLOWER), vote_for_(-1){
+      :id_(peer_id), term_(-1), status_(FOLLOWER), vote_for_(-1), is_dead_(false){
     this->rpc_addr_ = addr;
     this->rpc_port_ = port;
 
@@ -42,6 +42,14 @@ public:
     // start rpc service and raft service here. Do not need to join.
     rpc_thread_ = std::thread(&Raft::ThreadMain, this);
     raft_thread_ = std::thread(&Raft::LaunchRaftDemon, this);
+  }
+
+  ~Raft() {
+    LOG(INFO) << "Destroy raft " << this->rpc_addr_ << ":" << this->rpc_port_;
+    this->is_dead_ = true;
+    this->raft_thread_.join();
+    this->application_.terminate();
+    this->rpc_thread_.join();
   }
 
   std::string GetInfo();
@@ -106,7 +114,7 @@ private:
     auto int_dist_ = std::uniform_int_distribution<int>(200, 350);
     std::mt19937 mt = std::mt19937(rd());
 
-    while (true) {
+    while (!this->is_dead_) {
       if (this->status_ == FOLLOWER) {
         int patience = int_dist_(mt);
         long long int cur_milli = std::chrono::duration_cast< std::chrono::milliseconds >(
@@ -141,7 +149,11 @@ private:
           for (int i = 0; i < peers_.size(); i++) {
             VoteReply reply;
             if (i != this->id_) {
-               channels[i]->Vote(request, &reply, 1000);
+                try {
+                  channels[i]->Vote(request, &reply, 1000);
+                } catch (rpcz::rpc_error &e) {
+                  LOG(INFO) << "Error: " << e.what() << std::endl;;
+                }
                if (reply.vote() == true) {
                  vote_count += 1;
                }
@@ -162,7 +174,11 @@ private:
         for (int i = 0; i < peers_.size(); i++) {
           Empty request, reply;
           if (i != this->id_) {
-            channels[i]->AppendMsg(request, &reply, 1000);
+            try {
+              channels[i]->AppendMsg(request, &reply, 1000);
+            } catch (rpcz::rpc_error &e) {
+             LOG(INFO) << "Error: " << e.what() << std::endl;;
+            }
           }
         }
       }
@@ -185,6 +201,10 @@ private:
   long long int leader_active_time_;
 
   std::mutex lock_;
+
+  bool is_dead_;
+
+  rpcz::application application_;
 };
 
 }

@@ -59,6 +59,9 @@ TEST_F(RaftTest, BasicTest) {
       LOG(INFO) << "Error: " << e.what() << std::endl;;
     }
 
+    // LOG(INFO) << reply.status();
+
+
     if (reply.status() == PeerStatus::FOLLOWER) {
       follower_count++;
     } else if(reply.status() == PeerStatus::CANDIDATE) {
@@ -70,9 +73,23 @@ TEST_F(RaftTest, BasicTest) {
     }
   }
 
+  LOG(INFO) << "Follower count " << follower_count;
+  LOG(INFO) << "leader count " << leader_count;
+  LOG(INFO) << "candidate_count " << candidate_count;
+
+
   EXPECT_EQ(follower_count, 2);
   EXPECT_EQ(leader_count, 1);
   EXPECT_EQ(candidate_count, 0);
   EXPECT_EQ(unknown_count, 0);
+
+//  for (int i = 0; i < peer_num; i++) {
+//    try {
+//      channels[i]->c
+//    } catch (rpcz::rpc_error &e) {
+//      LOG(INFO) << "Error: " << e.what() << std::endl;;
+//    }
+//
+//  }
 
 }
