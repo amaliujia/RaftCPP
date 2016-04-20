@@ -46,6 +46,10 @@ public:
 
   ~Raft() {
     LOG(INFO) << "Destroy raft " << this->rpc_addr_ << ":" << this->rpc_port_;
+    this->Kill();
+  }
+
+  void Kill() {
     this->is_dead_ = true;
     this->raft_thread_.join();
     this->application_.terminate();
@@ -148,6 +152,7 @@ private:
 
           for (int i = 0; i < peers_.size(); i++) {
             VoteReply reply;
+            reply.set_vote(false);
             if (i != this->id_) {
                 try {
                   channels[i]->Vote(request, &reply, 1000);
@@ -206,8 +211,6 @@ private:
 
   rpcz::application application_;
 };
-
 }
-
 
 #endif //RAFT_RAFT_H
