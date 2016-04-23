@@ -12,3 +12,12 @@ make
 
 # To be continued about how to do next
 ```
+
+# Run tests
+```bash
+cd build
+tests/runBasicTest
+
+# you could also use valgrind
+# valgrind --leak-check=yes --trace-children=yes --track-origins=yes tests/runBasicTest
+```
