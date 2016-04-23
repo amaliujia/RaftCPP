@@ -133,6 +133,10 @@ private:
           if (this->vote_for_ == -1) {
             this->status_ = CANDIDATE;
           }
+          // TODO: handle the case when this->vote_for_ is not equal to -1
+          // TODO: aka lost connection with leader
+          // TODO: (guess) should remove channel to leader
+          // TODO: restart re-election
 
           locker.unlock();
         }
