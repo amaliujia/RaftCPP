@@ -1,6 +1,6 @@
 message VoteRequest{
     required int64 term = 1;
-    required int64 candidate_id = 2;
+    required string candidate_id = 2;
     required int64 last_log_index = 3;
     required int64 last_term_index = 4;
 }

@@ -1,4 +1,4 @@
-brew install protobuf zeromq boost cmake valgrind
+brew install protobuf zeromq boost cmake valgrind glog gflags
 wget https://raw.githubusercontent.com/zeromq/cppzmq/master/zmq.hpp -O /usr/local/include/zmq.hpp
 git clone git@github.com:thesamet/rpcz.git
 cd rpcz

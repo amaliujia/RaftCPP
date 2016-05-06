@@ -1,5 +1,5 @@
 include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_BINARY_DIR}/protofiles)
 include_directories(${CMAKE_SOURCE_DIR})
 
 add_executable(runBasicTests

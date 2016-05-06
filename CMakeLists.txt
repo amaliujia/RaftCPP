@@ -11,8 +11,6 @@ find_library(PROTO_LIB proto build/lib/protofiles)
 set_source_files_properties(${PROTO_SRC} ${PROTO_HEADER} PROPERTIES
         GENERATED TRUE)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/protofiles)
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIR})
 
@@ -48,6 +46,5 @@ include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
 # Glog
 ################################
 ADD_SUBDIRECTORY (lib/glog)
-
 
 

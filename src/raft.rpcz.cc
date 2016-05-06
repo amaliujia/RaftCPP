@@ -42,7 +42,7 @@ void rpcz_protobuf_AddDesc_raft_2eproto() {
 
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
     "\n\nraft.proto\"b\n\013VoteRequest\022\014\n\004term\030\001 \002("
-    "\003\022\024\n\014candidate_id\030\002 \002(\003\022\026\n\016last_log_inde"
+    "\003\022\024\n\014candidate_id\030\002 \002(\t\022\026\n\016last_log_inde"
     "x\030\003 \002(\003\022\027\n\017last_term_index\030\004 \002(\003\"\'\n\tVote"
     "Reply\022\014\n\004term\030\001 \002(\003\022\014\n\004vote\030\002 \002(\010\"\210\001\n\nPe"
     "erStatus\022\014\n\004term\030\001 \002(\003\022,\n\006status\030\002 \002(\0162\022"
