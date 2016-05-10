@@ -138,13 +138,8 @@ private:
           if (this->vote_for_ == "") {
             this->status_ = CANDIDATE;
           } else {
-            // TODO: handle the case when this->vote_for_ is not equal to -1
-            // TODO: aka lost connection with leader
-            // TODO: (guess) should remove channel to leader
-            // TODO: restart re-election
             channels.erase(channels.find(this->vote_for_));
             peers_.erase(this->vote_for_);
-
             this->vote_for_ = "";
           }
           locker.unlock();
@@ -178,7 +173,7 @@ private:
             }
           }
 
-          if (vote_count >= (peers_.size() + 1) / 2) {
+          if (vote_count >= (peers_.size()/ 2+1)) {
             this->status_ = LEADER;
             LOG(INFO) << this->self_id_ << " becomes a leader";
           } else {
