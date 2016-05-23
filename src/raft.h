@@ -5,7 +5,8 @@
 #ifndef RAFT_RAFT_H
 #define RAFT_RAFT_H
 
-#include "raft.pb.h"
+#include "build/protofiles/raft.pb.h"
+// #include "raft.pb.h"
 #include "raft.rpcz.h"
 #include "common.h"
 
@@ -90,12 +91,38 @@ public:
     reply.send(response);
   }
 
-  virtual void AppendMsg(const Empty& request,
+  virtual void AppendMsg(const AppendRequest& request,
                          rpcz::reply<Empty> reply) {
     std::unique_lock<std::mutex> locker(lock_);
 
     this->leader_active_time_ = std::chrono::duration_cast< std::chrono::milliseconds >(
     std::chrono::system_clock::now().time_since_epoch()).count();
+
+    int term = request.term();
+    std::string leader_id = request.candidate_id();
+
+    if (this->term_ < term) {
+      this->term_ = term;
+
+      if (this->status_ == CANDIDATE || this->status_ == LEADER) {
+        this->status_ = FOLLOWER;
+        this->vote_for_ = leader_id;
+
+        // should do replication.
+      }
+    } else if (this->term_ > term) {
+      // should reject stale leader's request.
+    } else {
+      // msg tern is equal to peer term. Peer is never be a leader.
+
+      if (this->status_ == CANDIDATE ||
+        this->status_ == LEADER) { // handle the leader case for elegance.
+        this->status_ = FOLLOWER;
+        this->vote_for_ = leader_id;
+      }
+
+      // check log
+    }
 
     locker.unlock();
 
@@ -124,6 +151,8 @@ private:
     std::mt19937 mt = std::mt19937(rd());
 
     while (!this->is_dead_) {
+      std::unique_lock<std::mutex> locker(lock_);
+
       if (this->status_ == FOLLOWER) {
         int patience = int_dist_(mt);
         long long int cur_milli = std::chrono::duration_cast< std::chrono::milliseconds >(
@@ -133,7 +162,7 @@ private:
           std::this_thread::sleep_for (std::chrono::milliseconds(50));
         } else {
           // this->leader_active_time = cur_milli;
-          std::unique_lock<std::mutex> locker(lock_);
+          // std::unique_lock<std::mutex> locker(lock_);
 
           if (this->vote_for_ == "") {
             this->status_ = CANDIDATE;
@@ -142,7 +171,7 @@ private:
             peers_.erase(this->vote_for_);
             this->vote_for_ = "";
           }
-          locker.unlock();
+          // locker.unlock();
         }
       } else if (this->status_ == CANDIDATE) {
           LOG(INFO) << this->self_id_ << " becomes a candidate";
@@ -185,7 +214,12 @@ private:
       } else { // in leader status
         std::this_thread::sleep_for (std::chrono::milliseconds(50));
         for (auto peer : this->peers_) {
-          Empty request, reply;
+          AppendRequest request;
+          Empty reply;
+
+          request.set_candidate_id(this->self_id_);
+          request.set_term(this->term_);
+
           if (peer != this->self_id_) {
             try {
               channels[peer]->AppendMsg(request, &reply, 1000);
@@ -195,6 +229,7 @@ private:
           }
         }
       }
+      locker.unlock();
     }
   }
 

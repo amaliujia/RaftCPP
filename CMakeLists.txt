@@ -6,7 +6,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -lboost_system -lrpcz")
 find_package(BOOST COMPONENTS program_options REQUIRED)
 
 find_library(GLOG_LIB glog build/lib/glog)
-find_library(PROTO_LIB proto build/lib/protofiles)
+find_library(PROTO_LIB proto build/protofiles)
 
 set_source_files_properties(${PROTO_SRC} ${PROTO_HEADER} PROPERTIES
         GENERATED TRUE)
@@ -20,21 +20,21 @@ link_directories(${Boost_LIBRARY_DIR})
 add_subdirectory(tests)
 
 ################################
-# SRC
-################################
-add_subdirectory(src)
-
-################################
 # Proto
 ################################
 add_subdirectory(protofiles)
+
+################################
+# SRC
+################################
+add_subdirectory(src)
 
 ################################
 # GTest
 ################################
 ADD_SUBDIRECTORY (lib/googlemock)
 #enable_testing()
-include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
+#include_directories(${gmock_SOURCE_DIR}/include ${gmock_SOURCE_DIR})
 
 ## Add test cpp file
 #add_executable( runUnitTests testgtest.cpp )
