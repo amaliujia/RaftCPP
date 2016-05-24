@@ -81,7 +81,7 @@ TEST_F(RaftTest, ReElectionTest) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   int port = 5555;
-  size_t peer_num = 4;
+  size_t peer_num = 7;
 
   std::vector<std::string> service;
   for (size_t i = 0; i < peer_num; i++) {
@@ -152,7 +152,7 @@ TEST_F(RaftTest, ReElectionTest) {
     }
   }
 
-  EXPECT_EQ(follower_count, peer_num-2);
+  EXPECT_EQ(follower_count, peer_num - 2);
   EXPECT_EQ(leader_count, 1);
   EXPECT_EQ(candidate_count, 0);
   EXPECT_EQ(unknown_count, 0);

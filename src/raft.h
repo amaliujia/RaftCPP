@@ -143,9 +143,9 @@ private:
     rpcz::application application;
     std::unordered_map<std::string, std::unique_ptr<RaftService_Stub>> channels;
     for (const auto& s : peers_) {
-      if (s == this->self_id_) {
-        continue;
-      }
+//      if (s == this->self_id_) {
+//        continue;
+//      }
       channels[s] = std::unique_ptr<RaftService_Stub>(
       new RaftService_Stub(application.create_rpc_channel(s), true));
     }
@@ -171,9 +171,11 @@ private:
           if (this->vote_for_ == "") {
             this->status_ = CANDIDATE;
           } else {
+            auto channel_ptr = channels[this->vote_for_].release();
             channels.erase(channels.find(this->vote_for_));
             peers_.erase(this->vote_for_);
             this->vote_for_ = "";
+            delete channel_ptr;
           }
           // locker.unlock();
         }
