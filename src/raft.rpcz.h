@@ -38,7 +38,7 @@ class RaftService : public rpcz::service {
   virtual void GetStatus(const ::Empty& request,
                        ::rpcz::reply< ::PeerStatus> response);
   virtual void AppendMsg(const ::AppendRequest& request,
-                       ::rpcz::reply< ::Empty> response);
+                       ::rpcz::reply< ::AppendReply> response);
   virtual void Vote(const ::VoteRequest& request,
                        ::rpcz::reply< ::VoteReply> response);
 
@@ -76,10 +76,10 @@ class RaftService_Stub {
                        ::PeerStatus* response,
                        long deadline_ms = -1);
   void AppendMsg(const ::AppendRequest& request,
-                       ::Empty* response,
+                       ::AppendReply* response,
                        ::rpcz::rpc* rpc,                     ::rpcz::closure* done);
   void AppendMsg(const ::AppendRequest& request,
-                       ::Empty* response,
+                       ::AppendReply* response,
                        long deadline_ms = -1);
   void Vote(const ::VoteRequest& request,
                        ::VoteReply* response,

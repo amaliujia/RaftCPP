@@ -46,13 +46,15 @@ void rpcz_protobuf_AddDesc_raft_2eproto() {
     "x\030\003 \002(\003\022\027\n\017last_term_index\030\004 \002(\003\"\'\n\tVote"
     "Reply\022\014\n\004term\030\001 \002(\003\022\014\n\004vote\030\002 \002(\010\"3\n\rApp"
     "endRequest\022\014\n\004term\030\001 \002(\003\022\024\n\014candidate_id"
-    "\030\002 \002(\t\"\210\001\n\nPeerStatus\022\014\n\004term\030\001 \002(\003\022,\n\006s"
-    "tatus\030\002 \002(\0162\022.PeerStatus.Status:\010FOLLOWE"
-    "R\">\n\006Status\022\013\n\007UNKNOWN\020\000\022\014\n\010FOLLOWER\020\001\022\r"
-    "\n\tCANDIDATE\020\002\022\n\n\006LEADER\020\003\"\007\n\005Empty2v\n\013Ra"
-    "ftService\022 \n\tGetStatus\022\006.Empty\032\013.PeerSta"
-    "tus\022#\n\tAppendMsg\022\016.AppendRequest\032\006.Empty"
-    "\022 \n\004Vote\022\014.VoteRequest\032\n.VoteReply", 474);
+    "\030\002 \002(\t\",\n\013AppendReply\022\014\n\004term\030\001 \002(\003\022\017\n\007s"
+    "uccess\030\002 \002(\010\"\210\001\n\nPeerStatus\022\014\n\004term\030\001 \002("
+    "\003\022,\n\006status\030\002 \002(\0162\022.PeerStatus.Status:\010F"
+    "OLLOWER\">\n\006Status\022\013\n\007UNKNOWN\020\000\022\014\n\010FOLLOW"
+    "ER\020\001\022\r\n\tCANDIDATE\020\002\022\n\n\006LEADER\020\003\"\007\n\005Empty"
+    "2|\n\013RaftService\022 \n\tGetStatus\022\006.Empty\032\013.P"
+    "eerStatus\022)\n\tAppendMsg\022\016.AppendRequest\032\014"
+    ".AppendReply\022 \n\004Vote\022\014.VoteRequest\032\n.Vot"
+    "eReply", 526);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "raft.proto", &protobuf_RegisterTypes);
   ::google::protobuf::internal::OnShutdown(&rpcz_protobuf_ShutdownFile_raft_2eproto);
@@ -79,7 +81,7 @@ void RaftService::GetStatus(const ::Empty&,
 }
 
 void RaftService::AppendMsg(const ::AppendRequest&,
-                         ::rpcz::reply< ::Empty> reply) {
+                         ::rpcz::reply< ::AppendReply> reply) {
   reply.Error(::rpcz::application_error::METHOD_NOT_IMPLEMENTED,
               "Method AppendMsg() not implemented.");
 }
@@ -103,7 +105,7 @@ void RaftService::call_method(const ::google::protobuf::MethodDescriptor* method
     case 1:
       AppendMsg(
           *::google::protobuf::down_cast<const ::AppendRequest*>(&request),
-          ::rpcz::reply< ::Empty>(channel));
+          ::rpcz::reply< ::AppendReply>(channel));
       break;
     case 2:
       Vote(
@@ -139,7 +141,7 @@ const ::google::protobuf::Message& RaftService::GetResponsePrototype(
     case 0:
       return ::PeerStatus::default_instance();
     case 1:
-      return ::Empty::default_instance();
+      return ::AppendReply::default_instance();
     case 2:
       return ::VoteReply::default_instance();
     default:
@@ -183,7 +185,7 @@ void RaftService_Stub::GetStatus(const ::Empty& request,
   }
 }
 void RaftService_Stub::AppendMsg(const ::AppendRequest& request,
-                              ::Empty* response,
+                              ::AppendReply* response,
                               ::rpcz::rpc* rpc,
                               ::rpcz::closure* done) {
   channel_->call_method(service_name_,
@@ -191,7 +193,7 @@ void RaftService_Stub::AppendMsg(const ::AppendRequest& request,
                         request, response, rpc, done);
 }
 void RaftService_Stub::AppendMsg(const ::AppendRequest& request,
-                              ::Empty* response,
+                              ::AppendReply* response,
                               long deadline_ms) {
   ::rpcz::rpc rpc;
   rpc.set_deadline_ms(deadline_ms);

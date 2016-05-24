@@ -15,6 +15,11 @@ message AppendRequest{
     required string candidate_id = 2;
 }
 
+message AppendReply{
+    required int64 term = 1;
+    required bool success = 2;
+}
+
 message PeerStatus{
     required int64 term = 1;
      enum Status {
@@ -30,6 +35,6 @@ message Empty {}
 
 service RaftService {
   rpc GetStatus(Empty)   returns(PeerStatus);
-  rpc AppendMsg(AppendRequest)  returns(Empty);
+  rpc AppendMsg(AppendRequest)  returns(AppendReply);
   rpc Vote(VoteRequest) returns(VoteReply);
 }

@@ -12,7 +12,6 @@
 
 namespace raft {
 
-
 enum RaftStatus {
   UNKNOWN,
   DEAD,
@@ -30,6 +29,11 @@ typedef struct Raftcommand Raftcommand;
 class Raft : public RaftService {
 
 public:
+  Raft(const Raft&) = delete;
+  Raft &operator=(const Raft&) = delete;
+  Raft(const Raft &&) = delete;
+  Raft &operator=(const Raft &&) = delete;
+
   Raft(std::string addr, int port, int peer_id,
        const std::vector<std::string>& peers_addrs)
       :self_id_(peers_addrs[peer_id]), term_(-1), status_(FOLLOWER), vote_for_(""), is_dead_(false){
@@ -92,8 +96,12 @@ public:
   }
 
   virtual void AppendMsg(const AppendRequest& request,
-                         rpcz::reply<Empty> reply) {
+                         rpcz::reply<AppendReply> reply) {
     std::unique_lock<std::mutex> locker(lock_);
+
+    AppendReply e;
+    e.set_term(this->term_);
+    e.set_success(false);
 
     this->leader_active_time_ = std::chrono::duration_cast< std::chrono::milliseconds >(
     std::chrono::system_clock::now().time_since_epoch()).count();
@@ -101,32 +109,24 @@ public:
     int term = request.term();
     std::string leader_id = request.candidate_id();
 
-    if (this->term_ < term) {
+    if (this->term_ <= term) {
       this->term_ = term;
 
       if (this->status_ == CANDIDATE || this->status_ == LEADER) {
         this->status_ = FOLLOWER;
         this->vote_for_ = leader_id;
-
-        // should do replication.
       }
-    } else if (this->term_ > term) {
+
+      e.set_success(true);
+
+      // should do replication, aka check log
+    } else  {
       // should reject stale leader's request.
-    } else {
-      // msg tern is equal to peer term. Peer is never be a leader.
-
-      if (this->status_ == CANDIDATE ||
-        this->status_ == LEADER) { // handle the leader case for elegance.
-        this->status_ = FOLLOWER;
-        this->vote_for_ = leader_id;
-      }
-
-      // check log
+      e.set_success(false);
     }
 
     locker.unlock();
 
-    Empty e;
     reply.send(e);
   }
 
@@ -143,7 +143,10 @@ private:
     rpcz::application application;
     std::unordered_map<std::string, std::unique_ptr<RaftService_Stub>> channels;
     for (const auto& s : peers_) {
-       channels[s] = std::unique_ptr<RaftService_Stub>(new RaftService_Stub(application.create_rpc_channel(s), true));
+       if (s != this->self_id_) {
+         channels[s] = std::unique_ptr<RaftService_Stub>(
+             new RaftService_Stub(application.create_rpc_channel(s), true));
+       }
     }
 
     std::random_device rd;
@@ -215,7 +218,7 @@ private:
         std::this_thread::sleep_for (std::chrono::milliseconds(50));
         for (auto peer : this->peers_) {
           AppendRequest request;
-          Empty reply;
+          AppendReply reply;
 
           request.set_candidate_id(this->self_id_);
           request.set_term(this->term_);
@@ -223,6 +226,13 @@ private:
           if (peer != this->self_id_) {
             try {
               channels[peer]->AppendMsg(request, &reply, 1000);
+              if (reply.success() == false) {
+                this->status_ = FOLLOWER;
+                this->term_ = reply.term();
+                this->leader_active_time_ = std::chrono::duration_cast< std::chrono::milliseconds >(
+                std::chrono::system_clock::now().time_since_epoch()).count();
+                break;
+              }
             } catch (rpcz::rpc_error &e) {
              LOG(INFO) << "Error: " << e.what() << std::endl;;
             }
