@@ -143,10 +143,11 @@ private:
     rpcz::application application;
     std::unordered_map<std::string, std::unique_ptr<RaftService_Stub>> channels;
     for (const auto& s : peers_) {
-       if (s != this->self_id_) {
-         channels[s] = std::unique_ptr<RaftService_Stub>(
-             new RaftService_Stub(application.create_rpc_channel(s), true));
-       }
+      if (s == this->self_id_) {
+        continue;
+      }
+      channels[s] = std::unique_ptr<RaftService_Stub>(
+      new RaftService_Stub(application.create_rpc_channel(s), true));
     }
 
     std::random_device rd;
@@ -157,7 +158,7 @@ private:
       std::unique_lock<std::mutex> locker(lock_);
 
       if (this->status_ == FOLLOWER) {
-        int patience = int_dist_(mt);
+        int patience = int_dist_(mt) * 25;
         long long int cur_milli = std::chrono::duration_cast< std::chrono::milliseconds >(
         std::chrono::system_clock::now().time_since_epoch()).count();
 

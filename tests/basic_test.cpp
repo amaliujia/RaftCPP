@@ -36,7 +36,7 @@ TEST_F(RaftTest, ElectionTest) {
     peers.emplace_back(std::unique_ptr<raft::Raft>(new raft::Raft("127.0.0.1",port + i, i, service)));
   }
 
-  std::this_thread::sleep_for (std::chrono::seconds(10));
+  std::this_thread::sleep_for (std::chrono::seconds(18));
 
   rpcz::application application;
   std::vector<std::unique_ptr<RaftService_Stub>> channels;
@@ -93,7 +93,7 @@ TEST_F(RaftTest, ReElectionTest) {
     peers.emplace_back(std::unique_ptr<raft::Raft>(new raft::Raft("127.0.0.1",port + i, i, service)));
   }
 
-  std::this_thread::sleep_for (std::chrono::seconds(10));
+  std::this_thread::sleep_for (std::chrono::seconds(18));
 
   rpcz::application application;
   std::vector<std::unique_ptr<RaftService_Stub>> channels;
@@ -121,7 +121,7 @@ TEST_F(RaftTest, ReElectionTest) {
   }
 
   EXPECT_NE(-1, leader_round_one);
-  std::this_thread::sleep_for (std::chrono::seconds(10));
+  std::this_thread::sleep_for (std::chrono::seconds(18));
 
   int leader_count = 0,
   follower_count = 0,
