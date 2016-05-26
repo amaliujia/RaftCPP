@@ -41,6 +41,8 @@ class RaftService : public rpcz::service {
                        ::rpcz::reply< ::AppendReply> response);
   virtual void Vote(const ::VoteRequest& request,
                        ::rpcz::reply< ::VoteReply> response);
+  virtual void Op(const ::OpRequest& request,
+                       ::rpcz::reply< ::OpReply> response);
 
   // implements Service ----------------------------------------------
 
@@ -86,6 +88,12 @@ class RaftService_Stub {
                        ::rpcz::rpc* rpc,                     ::rpcz::closure* done);
   void Vote(const ::VoteRequest& request,
                        ::VoteReply* response,
+                       long deadline_ms = -1);
+  void Op(const ::OpRequest& request,
+                       ::OpReply* response,
+                       ::rpcz::rpc* rpc,                     ::rpcz::closure* done);
+  void Op(const ::OpRequest& request,
+                       ::OpReply* response,
                        long deadline_ms = -1);
  private:
   ::rpcz::rpc_channel* channel_;

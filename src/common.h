@@ -16,4 +16,6 @@
 
 #include <rpcz/rpcz.hpp>
 
+#include <pthread.h>
+
 #endif //RAFT_COMMON_H

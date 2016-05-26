@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.5)
 project(Raft)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -lboost_system -lrpcz")
-
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -lboost_system -lrpcz")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O0 -g -ggdb -lboost_system -lrpcz")
 find_package(BOOST COMPONENTS program_options REQUIRED)
 
 find_library(GLOG_LIB glog build/lib/glog)

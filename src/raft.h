@@ -20,8 +20,40 @@ enum RaftStatus {
   CANDIDATE
 };
 
-struct RaftCommand {
-  int term;
+enum RaftOp {
+  INSERT,
+  DELETE,
+  QUERY,
+  INVALID
+};
+
+struct LogEntry {
+  uint32_t term;
+  uint32_t index;
+
+  RaftOp op;
+  std::string key;
+  std::string val;
+};
+
+struct RWLock {
+public:
+  RWLock(RWLock const &) = delete;
+  RWLock &operator=(RWLock const &) = delete;
+
+  RWLock() { pthread_rwlock_init(&rw_lock, nullptr); }
+
+  ~RWLock() { pthread_rwlock_destroy(&rw_lock); }
+
+  void ReadLock() const { pthread_rwlock_rdlock(&rw_lock); }
+
+  void WriteLock() const { pthread_rwlock_wrlock(&rw_lock); }
+
+  void Unlock() const { pthread_rwlock_unlock(&rw_lock); }
+
+private:
+  // can only be moved, not copied
+  mutable pthread_rwlock_t rw_lock;
 };
 
 typedef struct Raftcommand Raftcommand;
@@ -34,47 +66,47 @@ public:
   Raft(const Raft &&) = delete;
   Raft &operator=(const Raft &&) = delete;
 
-  Raft(std::string addr, int port, int peer_id,
-       const std::vector<std::string>& peers_addrs)
-      :self_id_(peers_addrs[peer_id]), term_(-1), status_(FOLLOWER), vote_for_(""), is_dead_(false){
-    this->rpc_addr_ = addr;
-    this->rpc_port_ = port;
+  Raft(std::string addr, int port, int peer_id, const std::vector<std::string>& peers_addrs);
 
-    this->peers_.insert(peers_addrs.begin(), peers_addrs.end());
+  ~Raft();
 
-    this->leader_active_time_ = std::chrono::duration_cast< std::chrono::milliseconds >(
-    std::chrono::system_clock::now().time_since_epoch()).count();
+  // Kill Raft peer node.
+  void Kill();
 
-    // start rpc service and raft service here. Do not need to join.
-    rpc_thread_ = std::thread(&Raft::ThreadMain, this);
-    raft_thread_ = std::thread(&Raft::LaunchRaftDemon, this);
-  }
-
-  ~Raft() {
-    LOG(INFO) << "Destroy raft " << this->rpc_addr_ << ":" << this->rpc_port_;
-    this->Kill();
-  }
-
-  void Kill() {
-    if (this->is_dead_ == false) {
-      this->is_dead_ = true;
-      this->raft_thread_.join();
-      this->application_.terminate();
-      this->rpc_thread_.join();
-      this->status_ = DEAD;
-    } else {
-      LOG(INFO) << "Killing a raft node who has been killed";
-    }
-  }
-
+  // Get description of Raft peer node
   std::string GetInfo();
 
-  virtual void GetStatus(const Empty& e, rpcz::reply<PeerStatus> reply) {
-    PeerStatus status;
-    status.set_term(this->term_);
-    status.set_status(StatusMapping());
-    reply.send(status);
-   }
+  virtual void GetStatus(const Empty& e, rpcz::reply<PeerStatus> reply);
+
+  virtual void Op(const OpRequest& e, rpcz::reply<OpReply> reply) {
+    OpReply rep;
+    rep.set_success(false);
+
+    if(this->status_ != LEADER) {
+      reply.send(rep);
+      return;
+    }
+
+    switch (e.op()) {
+      case EntryOp::DELETE:
+      case EntryOp::INSERT:
+        log_lock_.WriteLock();
+
+        log_lock_.Unlock();
+        break;
+      case EntryOp::QUERY:
+        log_lock_.ReadLock();
+
+        log_lock_.Unlock();
+        break;
+      default:
+        break;
+    }
+
+    rep.set_success(true);
+    reply.send(rep);
+    return;
+  }
 
   virtual void Vote(const VoteRequest& request, rpcz::reply<VoteReply> reply) {
     std::unique_lock<std::mutex> locker(lock_);
@@ -143,9 +175,9 @@ private:
     rpcz::application application;
     std::unordered_map<std::string, std::unique_ptr<RaftService_Stub>> channels;
     for (const auto& s : peers_) {
-//      if (s == this->self_id_) {
-//        continue;
-//      }
+      if (s == this->self_id_) {
+        continue;
+      }
       channels[s] = std::unique_ptr<RaftService_Stub>(
       new RaftService_Stub(application.create_rpc_channel(s), true));
     }
@@ -247,27 +279,43 @@ private:
   }
 
 private:
+  // Network
   std::string rpc_addr_;
   int rpc_port_;
+  rpcz::application application_;
 
+  // Background threads
   std::thread rpc_thread_;
   std::thread raft_thread_;
 
+  // Node status
   std::string self_id_;
   std::string vote_for_;
-  int term_;
+  uint64_t term_;
   RaftStatus status_;
-
-  //std::vector<std::string> peers_;
-  std::unordered_set<std::string> peers_;
-
   long long int leader_active_time_;
-
-  std::mutex lock_;
-
   bool is_dead_;
 
-  rpcz::application application_;
+  // Volatile state of leader
+  // Index of highest log entry known to be commited. Initialized to 0.
+  uint64_t commit_index_;
+  // Index of highest log entry applied to state machine. Initialized to 0.
+  uint64_t last_applied_;
+
+  // peers
+  //std::vector<std::string> peers_;
+  std::unordered_set<std::string> peers_;
+  // used for leaders. index of next log entry to send to server.
+  // Initialized to leader's last log index + 1.
+  std::unordered_map<std::string, uint64_t> peers_next_index_;
+
+  // Utils
+  std::mutex lock_;
+  RWLock log_lock_;
+
+  // logs
+  std::vector<LogEntry> logs_;
+
 };
 }
 

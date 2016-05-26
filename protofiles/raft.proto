@@ -1,27 +1,45 @@
 message VoteRequest{
-    required int64 term = 1;
+    required uint64 term = 1;
     required string candidate_id = 2;
-    required int64 last_log_index = 3;
-    required int64 last_term_index = 4;
+    required uint64 last_log_index = 3;
+    required uint64 last_term_index = 4;
 }
 
 message VoteReply{
-    required int64 term = 1;
+    required uint64 term = 1;
     required bool vote = 2;
 }
 
+enum EntryOp {
+    INVALID = 0;
+    INSERT = 1;
+    DELETE = 2;
+    QUERY = 3;
+}
+
+message LogEntry {
+    required EntryOp op = 1 [default = INVALID];
+    optional string key = 2;
+    optional string value = 3;
+}
+
 message AppendRequest{
-    required int64 term = 1;
+    required uint64 term = 1;
     required string candidate_id = 2;
+
+    required uint64 prev_log_index = 3;
+    required uint64 prev_log_term = 4;
+
+    repeated LogEntry entries = 5;
 }
 
 message AppendReply{
-    required int64 term = 1;
+    required uint64 term = 1;
     required bool success = 2;
 }
 
 message PeerStatus{
-    required int64 term = 1;
+    required uint64 term = 1;
      enum Status {
         UNKNOWN = 0;
         FOLLOWER = 1;
@@ -31,10 +49,21 @@ message PeerStatus{
     required Status status = 2 [default = FOLLOWER];
 }
 
+message OpRequest {
+    required EntryOp op = 1;
+    optional string key = 2;
+    optional string value = 3;
+}
+
+message OpReply {
+    required bool success = 1;
+}
+
 message Empty {}
 
 service RaftService {
   rpc GetStatus(Empty)   returns(PeerStatus);
   rpc AppendMsg(AppendRequest)  returns(AppendReply);
   rpc Vote(VoteRequest) returns(VoteReply);
+  rpc Op(OpRequest) returns(OpReply);
 }
