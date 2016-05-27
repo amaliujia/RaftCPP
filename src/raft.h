@@ -9,32 +9,10 @@
 // #include "raft.pb.h"
 #include "raft.rpcz.h"
 #include "common.h"
+#include "struct.h"
+#include "consensus_log.h"
 
 namespace raft {
-
-enum RaftStatus {
-  UNKNOWN,
-  DEAD,
-  LEADER,
-  FOLLOWER,
-  CANDIDATE
-};
-
-enum RaftOp {
-  INSERT,
-  DELETE,
-  QUERY,
-  INVALID
-};
-
-struct LogEntry {
-  uint32_t term;
-  uint32_t index;
-
-  RaftOp op;
-  std::string key;
-  std::string val;
-};
 
 struct RWLock {
 public:
@@ -243,6 +221,21 @@ private:
           if (vote_count >= (peers_.size()/ 2+1)) {
             this->status_ = LEADER;
             LOG(INFO) << this->self_id_ << " becomes a leader";
+
+            // initialize
+            if (logs_.size() == 0) {
+              // First leader or no logs.
+              for (const auto& peer : this->peers_) {
+                peers_next_index_[peer] = 0;
+              }
+
+              commit_index_ = 0;
+              last_applied_ = 0;
+
+            } else { // if contains logs, the setting is different.
+
+            }
+
           } else {
             this->leader_active_time_ = std::chrono::duration_cast< std::chrono::milliseconds >(
             std::chrono::system_clock::now().time_since_epoch()).count();
@@ -259,7 +252,7 @@ private:
           request.set_term(this->term_);
 
           if (peer != this->self_id_) {
-            try {
+            try { // TODO: Chang to multi-threading.
               channels[peer]->AppendMsg(request, &reply, 1000);
               if (reply.success() == false) {
                 this->status_ = FOLLOWER;
@@ -314,7 +307,7 @@ private:
   RWLock log_lock_;
 
   // logs
-  std::vector<LogEntry> logs_;
+  ConsensusLog logs_;
 
 };
 }

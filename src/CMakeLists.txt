@@ -2,7 +2,15 @@ include_directories(${CMAKE_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/protofiles)
 
-ADD_LIBRARY(Raft_lib common.h raft.cpp raft.h raft.rpcz.h raft.rpcz.cc)
+ADD_LIBRARY(Raft_lib
+            common.h
+            raft.cpp
+            raft.h
+            raft.rpcz.h
+            raft.rpcz.cc
+            consensus_log.cpp
+            consensus_log.h
+            struct.h)
 
 set(SOURCE_FILES main.cpp
                 common.h)
