@@ -2,6 +2,8 @@
 
 Trying to build a Raft distributed consensus protocal in cpp.
 
+No log support now.
+
 # how to use (Mac os)
 ```bash
 # Make sure install dependencies first. See dependencies file in root dir.
